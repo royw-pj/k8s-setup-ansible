@@ -1,0 +1,17 @@
+---
+- name: Install common utilities for Linux
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - net-tools
+    - wget
+    - logrotate
+    - yum-utils
+    - gcc #build-essential
+    - gcc-c++ #build-essential
+    - make #build-essential
+    - device-mapper-persistent-data 
+    - lvm2
+    - curl
+    - openssl

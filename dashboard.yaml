@@ -1,0 +1,7 @@
+- hosts: master
+  become: yes
+  roles:
+  - kubernetes/dashboard
+  environment: 
+    KUBECONFIG: /etc/kubernetes/admin.conf
+

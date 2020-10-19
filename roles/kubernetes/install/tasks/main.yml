@@ -1,0 +1,90 @@
+---
+- name: Add kubernetes repo
+  copy:
+    src: kubernetes.repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+
+- name: Configurate bridged traffic in iptables
+  lineinfile:
+    path: /etc/sysctl.d/k8s.conf
+    line: "{{ item }}"
+    create: yes
+  with_items:
+    - net.bridge.bridge-nf-call-ip6tables = 1
+    - net.bridge.bridge-nf-call-iptables = 1
+  register: result
+
+- name: Reload system variables
+  shell: sysctl --system
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+  with_items:
+    - swap
+    - none
+
+- name: Disable SWAP
+  shell: swapoff -a
+
+- name: Disable SELinux
+  selinux: 
+    state: disabled
+
+- name: Disable SELinux
+  lineinfile:
+    path: /etc/selinux/config
+    line: "{{ item }}"
+    state: absent
+    create: yes
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+  - SELINUX=disabled
+  - SELINUX=enforcing
+
+- name: Disable SELinux
+  lineinfile:
+    path: /etc/selinux/config
+    line: SELINUX=permissive
+    create: yes
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add DNS record (master node)
+  lineinfile:
+    line: "{{ item }} master-{{ groups['master'].index(item) }}-node"
+    path: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+  with_items: "{{ groups['master'] }}"
+
+- name: Add DNS record (worker node)
+  lineinfile:
+    line: "{{ item }} worker-{{ groups['worker'].index(item) }}-node"
+    path: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+  with_items: "{{ groups['worker'] | default([]) }}"
+
+- name: Install kubernetes
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - kubelet
+  - kubeadm
+  - kubectl
+    
+- name: Start kubelet
+  systemd:
+    name: kubelet
+    daemon_reload: yes
+    state: started
+    enabled: yes

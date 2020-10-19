@@ -1,0 +1,8 @@
+- hosts: master
+  become: yes
+  roles:
+  - python-prerequisite
+  - user-group
+  - utilities
+  - docker
+  - kubernetes/master

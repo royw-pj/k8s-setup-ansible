@@ -1,0 +1,8 @@
+- hosts: worker
+  become: yes
+  roles:
+  - python-prerequisite
+  - user-group
+  - utilities
+  - docker
+  - kubernetes/worker

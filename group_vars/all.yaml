@@ -1,0 +1,8 @@
+# docker_insecure_registries:
+#   - "localhost:5000"
+#   - "localhost:5001"
+#   - "localhost:5002"
+
+pod_network_cidr: 10.244.0.0/16
+kubernetes_master_login_user: infocast
+pod_network_yaml: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml

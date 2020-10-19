@@ -1,0 +1,60 @@
+---
+- name: Get service facts
+  service_facts: {}
+
+- name: Firewall configuration
+  when: 
+  - ansible_facts is defined
+  - "'firewalld.service' in ansible_facts.services"
+  - ansible_facts.services['firewalld.service'].state == "running"
+  firewalld:
+    permanent: true
+    immediate: true
+    state: enabled
+    port: "{{ item }}"
+  with_items:
+  - 10250/tcp
+  - 30000-32767/tcp
+
+- name: install kubernetes
+  include_role: 
+    name: kubernetes/install
+
+# - name: Set hostname
+- name: Set hostname
+  hostname:
+    name: worker-{{ groups['worker'].index(inventory_hostname) }}-node
+
+- name: Reset Kubernetes component
+  shell: "kubeadm reset --force"
+  register: reset_cluster
+  become: true
+
+- name: Get Kubernetes cluster token
+  shell: kubeadm token list
+  register: token_result
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: Get Kubernetes cluster cert hash
+  shell: >
+      openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | 
+      openssl rsa -pubin -outform der 2>/dev/null | 
+      openssl dgst -sha256 -hex | 
+      sed 's/^.* //'
+  register: cert_hash_result
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: Retrieve token and cert hash
+  when: reset_cluster is succeeded and token_result is succeeded and cert_hash_result is succeeded
+  set_fact:
+    kubernetes_master_token: "{{ token_result.stdout_lines[1].split()[0] | trim }}"
+    kubernetes_master_cert_hash: "{{ cert_hash_result.stdout }}"
+
+- name: Join Kubernetes cluster
+  when: kubernetes_master_token is defined and kubernetes_master_cert_hash is defined
+  shell: >
+    kubeadm join {{ groups['master'][0] }}:6443 \
+    --token {{ kubernetes_master_token }} \
+    --discovery-token-ca-cert-hash sha256:{{ kubernetes_master_cert_hash }}
+  environment: 
+    KUBECONFIG: /etc/kubernetes/admin.conf

@@ -1,0 +1,29 @@
+---
+- name: Check Python2 installed or not
+  block: 
+    - name: Check python2 version
+      raw: python --version
+  rescue:
+    - debug: msg="python2 was not installed on remote host"
+
+    - name: Install EPEL release
+      raw: yum install -y epel-release
+
+    - name: Install python 2.7
+      raw: yum install -y python27
+      
+- name: Check Python3 installed or not
+  block: 
+    - name: Check python3 version
+      raw: python3 --version
+  rescue:
+    - debug: msg="python3 was not installed on remote host"
+    
+    - name: Install EPEL release
+      raw: yum install -y epel-release
+      become: yes
+
+    - name: Install python 3
+      raw: yum install -y python3
+      become: yes
+  

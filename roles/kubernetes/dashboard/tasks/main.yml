@@ -1,0 +1,69 @@
+---
+# tasks file for kubernetes/dashboard
+- name: Setfact
+  set_fact:
+    directory: /srv/dashboard
+  
+- name: Setfact
+  set_fact:
+    main_yaml: "{{ directory }}/main.yaml"
+    account_yaml: "{{ directory }}/dashboard-admin.yaml"
+    namespace_yaml: "{{ directory }}/namespace.yaml"
+
+- name: Create directory
+  file:
+    path: "{{ directory }}"
+    state: directory
+    
+- name: Copy yaml to srv
+  template:
+    src: dashboard.yaml.j2
+    dest: "{{ main_yaml }}"
+
+- name: Copy yaml to srv
+  copy:
+    src: dashboard-admin.yaml
+    dest: "{{ account_yaml }}"
+
+- name: Copy yaml to srv
+  copy:
+    src: namespace.yaml
+    dest: "{{ namespace_yaml }}"
+
+- name: Apply namespace
+  shell: "kubectl apply -f {{ directory }}/namespace.yaml"
+  when: delete is not defined or delete|bool == false
+
+- name: Apply dashboard
+  shell: "kubectl apply -f {{ directory }}"
+  when: delete is not defined or delete|bool == false
+
+- name: Delete the dashboard
+  shell: "kubectl delete -f {{ directory }}"
+  when: delete is defined and delete|bool == true
+
+- name: Get service facts
+  service_facts: {}
+
+- name: Firewall configuration (add port)
+  when: 
+  - ansible_facts is defined
+  - "'firewalld.service' in ansible_facts.services"
+  - ansible_facts.services['firewalld.service'].state == "running"
+  firewalld:
+    permanent: true
+    immediate: true
+    state: enabled
+    port: "{{ node_port }}/tcp"
+
+- name: Firewall configuration (remove port)
+  when: 
+  - ansible_facts is defined
+  - "'firewalld.service' in ansible_facts.services"
+  - ansible_facts.services['firewalld.service'].state == "running"
+  - delete is defined and delete
+  firewalld:
+    permanent: true
+    immediate: true
+    state: disabled
+    port: "{{ node_port }}/tcp"

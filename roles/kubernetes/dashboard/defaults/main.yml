@@ -1,0 +1,4 @@
+---
+# defaults file for kubernetes/dashboard
+node_port: 30888
+delete: false

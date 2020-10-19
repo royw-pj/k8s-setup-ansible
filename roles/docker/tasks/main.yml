@@ -1,0 +1,51 @@
+---
+- name: Add Docker repo
+  get_url: 
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+  become: yes
+
+- name: Install Docker
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+
+- name: adding existing user to group docker
+  user:
+    name: "{{ ansible_user }}"
+    groups:
+      - docker
+    append: yes
+
+- name: Create /etc/docker directory
+  file:
+    path: /etc/docker
+    state: directory
+
+- name: Docker daemon configuration
+  template: 
+    src: docker-daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0755
+  register: docker_daemon_configuration
+
+- name: Docker restart
+  when: docker_daemon_configuration.changed
+  service:
+    name: docker
+    state: restarted
+    enabled: yes
+    
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
