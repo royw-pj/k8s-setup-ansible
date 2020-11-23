@@ -10,6 +10,7 @@
   firewalld:
     permanent: true
     immediate: true
+    masquerade: true
     state: enabled
     port: "{{ item }}"
   with_items:
