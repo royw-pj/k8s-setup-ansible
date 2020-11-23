@@ -56,6 +56,9 @@
     mode: 0755
     remote_src: true
 
+- name: Clear node taint
+  command: "kubectl taint nodes --all node-role.kubernetes.io/master-"
+
 - name: Set up Pod Network
   when: init_cluster is succeeded
   shell: "kubectl apply -f {{ pod_network_yaml | default('https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml') }}"
