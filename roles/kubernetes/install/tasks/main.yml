@@ -78,7 +78,7 @@
     name: "{{ item }}"
     state: present
   with_items:
-  - kubelet
+  - kubelet-1.18.0
   - kubeadm
   - kubectl
     
