@@ -4,5 +4,5 @@
 #   - "localhost:5002"
 
 pod_network_cidr: 10.244.0.0/16
-kubernetes_master_login_user: infocast
+kubernetes_master_login_user: testinguser
 pod_network_yaml: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
